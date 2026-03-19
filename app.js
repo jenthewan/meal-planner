@@ -123,15 +123,43 @@ function makeMealCard(key, label, meal) {
     const details = document.createElement("div");
     details.className = "meal-details";
 
+    if (meal.ingredients && meal.ingredients.length > 0) {
+      const ingLabel = document.createElement("div");
+      ingLabel.className = "detail-label";
+      ingLabel.textContent = "Ingredients";
+      const ingList = document.createElement("ul");
+      ingList.className = "detail-list";
+      meal.ingredients.forEach(ing => {
+        const li = document.createElement("li");
+        li.textContent = ing;
+        ingList.appendChild(li);
+      });
+      details.appendChild(ingLabel);
+      details.appendChild(ingList);
+    }
+
     if (meal.instructions) {
       const instrLabel = document.createElement("div");
       instrLabel.className = "detail-label";
       instrLabel.textContent = "Instructions";
-      const instrText = document.createElement("div");
-      instrText.className = "detail-text";
-      instrText.textContent = meal.instructions;
-      details.appendChild(instrLabel);
-      details.appendChild(instrText);
+      const steps = meal.instructions.split(/\.\s+|\n/).map(s => s.trim()).filter(Boolean);
+      if (steps.length > 1) {
+        const ol = document.createElement("ol");
+        ol.className = "detail-list";
+        steps.forEach(step => {
+          const li = document.createElement("li");
+          li.textContent = step.replace(/\.$/, "");
+          ol.appendChild(li);
+        });
+        details.appendChild(instrLabel);
+        details.appendChild(ol);
+      } else {
+        const instrText = document.createElement("div");
+        instrText.className = "detail-text";
+        instrText.textContent = meal.instructions;
+        details.appendChild(instrLabel);
+        details.appendChild(instrText);
+      }
     }
 
     if (meal.babyNotes) {
@@ -140,11 +168,24 @@ function makeMealCard(key, label, meal) {
       const babyLabel = document.createElement("div");
       babyLabel.className = "detail-label";
       babyLabel.textContent = "Margot";
-      const babyText = document.createElement("div");
-      babyText.className = "detail-text";
-      babyText.textContent = meal.babyNotes;
-      babyDiv.appendChild(babyLabel);
-      babyDiv.appendChild(babyText);
+      const steps = meal.babyNotes.split(/\.\s+|\n/).map(s => s.trim()).filter(Boolean);
+      if (steps.length > 1) {
+        const ol = document.createElement("ol");
+        ol.className = "detail-list";
+        steps.forEach(step => {
+          const li = document.createElement("li");
+          li.textContent = step.replace(/\.$/, "");
+          ol.appendChild(li);
+        });
+        babyDiv.appendChild(babyLabel);
+        babyDiv.appendChild(ol);
+      } else {
+        const babyText = document.createElement("div");
+        babyText.className = "detail-text";
+        babyText.textContent = meal.babyNotes;
+        babyDiv.appendChild(babyLabel);
+        babyDiv.appendChild(babyText);
+      }
       details.appendChild(babyDiv);
     }
 
