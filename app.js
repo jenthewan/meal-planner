@@ -142,13 +142,14 @@ function makeMealCard(key, label, meal) {
       const instrLabel = document.createElement("div");
       instrLabel.className = "detail-label";
       instrLabel.textContent = "Instructions";
-      const steps = meal.instructions.split(/\.\s+|\n/).map(s => s.trim()).filter(Boolean);
+      const raw = Array.isArray(meal.instructions) ? meal.instructions : meal.instructions.split(/\.\s+|\n/);
+      const steps = raw.map(s => s.trim().replace(/\.$/, "")).filter(Boolean);
       if (steps.length > 1) {
         const ol = document.createElement("ol");
         ol.className = "detail-list";
         steps.forEach(step => {
           const li = document.createElement("li");
-          li.textContent = step.replace(/\.$/, "");
+          li.textContent = step;
           ol.appendChild(li);
         });
         details.appendChild(instrLabel);
@@ -156,7 +157,7 @@ function makeMealCard(key, label, meal) {
       } else {
         const instrText = document.createElement("div");
         instrText.className = "detail-text";
-        instrText.textContent = meal.instructions;
+        instrText.textContent = steps[0] || meal.instructions;
         details.appendChild(instrLabel);
         details.appendChild(instrText);
       }
@@ -168,13 +169,14 @@ function makeMealCard(key, label, meal) {
       const babyLabel = document.createElement("div");
       babyLabel.className = "detail-label";
       babyLabel.textContent = "Margot";
-      const steps = meal.babyNotes.split(/\.\s+|\n/).map(s => s.trim()).filter(Boolean);
+      const raw = Array.isArray(meal.babyNotes) ? meal.babyNotes : meal.babyNotes.split(/\.\s+|\n/);
+      const steps = raw.map(s => s.trim().replace(/\.$/, "")).filter(Boolean);
       if (steps.length > 1) {
         const ol = document.createElement("ol");
         ol.className = "detail-list";
         steps.forEach(step => {
           const li = document.createElement("li");
-          li.textContent = step.replace(/\.$/, "");
+          li.textContent = step;
           ol.appendChild(li);
         });
         babyDiv.appendChild(babyLabel);
@@ -182,7 +184,7 @@ function makeMealCard(key, label, meal) {
       } else {
         const babyText = document.createElement("div");
         babyText.className = "detail-text";
-        babyText.textContent = meal.babyNotes;
+        babyText.textContent = steps[0] || meal.babyNotes;
         babyDiv.appendChild(babyLabel);
         babyDiv.appendChild(babyText);
       }
