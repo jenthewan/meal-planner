@@ -313,8 +313,8 @@ function openEditModal(key, meal) {
   editingKey = key;
   modalTitle.textContent = "Edit Meal";
   modalName.value = meal.name || "";
-  modalInstructions.value = meal.instructions || "";
-  modalBaby.value = meal.babyNotes || "";
+  modalInstructions.value = Array.isArray(meal.instructions) ? meal.instructions.join("\n") : (meal.instructions || "");
+  modalBaby.value = Array.isArray(meal.babyNotes) ? meal.babyNotes.join("\n") : (meal.babyNotes || "");
   modalNotes.value = meal.userNotes || "";
   modalIngredients.value = (meal.ingredients || []).join("\n");
   overlay.classList.remove("hidden");
@@ -336,10 +336,13 @@ document.getElementById("modal-save").addEventListener("click", () => {
     .map(s => s.trim())
     .filter(Boolean);
 
+  const instructions = modalInstructions.value.split("\n").map(s => s.trim()).filter(Boolean);
+  const babyNotes = modalBaby.value.split("\n").map(s => s.trim()).filter(Boolean);
+
   saveMeal(editingKey, {
     name: modalName.value.trim(),
-    instructions: modalInstructions.value.trim(),
-    babyNotes: modalBaby.value.trim(),
+    instructions,
+    babyNotes,
     userNotes: modalNotes.value.trim(),
     ingredients,
   });
@@ -368,25 +371,25 @@ document.querySelectorAll(".tab").forEach(tab => {
 // ── Generate tab: copy prompt ────────────────────────────────────
 const HOUSEHOLD_PROMPT = `MEAL PLAN GENERATION PROMPT
 
-Generate a weekly meal plan for a family of three: two adults and one baby (1 year old, named Margot). Follow these rules exactly:
+Generate a weekly meal plan for a family of three: Jen (Adult 1), Li-Shuan (Adult 2), and baby Margot (born March 2025, ~1 year old).
 
 OUTPUT FORMAT — return ONLY a valid JSON object with this exact structure, no other text before or after:
 {
   "weekOf": "YYYY-MM-DD (Monday's date)",
   "meals": {
-    "monday_dinner":    { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "tuesday_dinner":   { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "wednesday_dinner": { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "thursday_dinner":  { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "friday_dinner":    { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "monday_lunch":     { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "wednesday_lunch":  { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "friday_lunch":     { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "margot_monday":    { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "margot_tuesday":   { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "margot_wednesday": { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "margot_thursday":  { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] },
-    "margot_friday":    { "name": "", "instructions": "", "babyNotes": "", "ingredients": [] }
+    "monday_dinner":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "tuesday_dinner":   { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "wednesday_dinner": { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "thursday_dinner":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "friday_dinner":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "monday_lunch":     { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "wednesday_lunch":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "friday_lunch":     { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "margot_monday":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "margot_tuesday":   { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "margot_wednesday": { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "margot_thursday":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
+    "margot_friday":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] }
   },
   "groceryList": [
     { "item": "", "amount": "", "category": "Produce|Protein|Dairy|Grains|Frozen|Other" }
@@ -394,21 +397,25 @@ OUTPUT FORMAT — return ONLY a valid JSON object with this exact structure, no 
 }
 
 HOUSEHOLD RULES:
-- Adult 1: Enjoys Asian cuisine, comfortable with sodium.
-- Adult 2: Health-conscious. Lower sodium, avoid excess carbs and red meat. Cannot eat walnuts, pecans, avocado, banana, or most mushrooms (enoki is fine). Allowed nuts: peanuts, almonds, pistachios. Where adults differ on seasoning, adjust at serving — do not cook two separate meals.
-- Baby Margot (~1 year old): Soft solids and finger foods only. 8 teeth, no molars. Safe: soft-cooked veg, soft fish, ground or finely shredded meat, soft grains, soft fruit (squish blueberries). Avoid: honey, high sodium, hard raw veg, large pieces, whole round slippery foods, hot dogs or processed cylinder-shaped foods.
-- Daycare lunches (margot_*): No eggs (classmate allergy). Safe unrefrigerated with ice pack 4–5 hours. No reheating. Finger food format. No saucy dishes that fall apart in a container.
-- Cooking effort: Max ~20 min active cooking. Preferred formats: sheet pan, stir fry, one-pan, rice cooker, simple assembly. Meals should feel fresh, not reheated leftovers.
-- Cuisine style: Asian-leaning strongly preferred. Preferred meal types: rice bowls, noodle bowls, stir fries, miso salmon, tofu dishes, lettuce wraps, steamed egg, Asian-flavored salads.
-- Pantry always stocked (never put on grocery list): soy sauce, miso, fish sauce, oyster sauce, sesame oil, chili oil, black vinegar, rice vinegar, mirin, ginger, garlic, scallions, standard spices.
-- Preferred proteins: salmon, tofu, shrimp, rotisserie chicken, ground turkey, eggs (adults only), occasional red meat.
-- Preferred veg: frozen broccoli, frozen stir fry veg, baby cucumbers, cherry tomatoes, bagged greens, shredded carrots, spinach, enoki mushrooms.
-- Frozen goods always on hand: peas, green beans, mango, Chinese boiled dumplings, Argentinian shrimp, thin-sliced lamb, chicken tenders.
-- Groceries available at: Whole Foods, PCC, H Mart, T&T.
-- Do not repeat any dinner from the last 4 weeks.
-- Overlap ingredients across meals to reduce waste.
-- Pull Margot's portion before adding sauces/seasoning — no separate cooking.
-- Adult lunches should repurpose dinner leftovers where possible.`;
+Jen (Adult 1): Enjoys bold, authentic Asian food. Comfortable with sodium, spice, and fat. No restrictions.
+Li-Shuan (Adult 2): Health-conscious. Lower sodium, avoid excess carbs and red meat. Cannot eat walnuts, pecans, avocado, banana, or most mushrooms (enoki is fine). Allowed nuts: peanuts, almonds, pistachios. Where Jen and Li-Shuan differ on seasoning or heat, adjust at serving — do not cook two separate meals. Restricted ingredients may appear as optional garnish for Jen only.
+Margot (~1 year old): Soft solids and finger foods only. 8 teeth, no molars. Safe: soft-cooked veg, soft fish, ground or finely shredded meat, soft grains, soft fruit (squish blueberries before serving). Avoid: honey, high sodium, hard raw veg, large pieces, whole round slippery foods, hot dogs or processed cylinder-shaped foods. Pull Margot's portion before adding any sauces or seasoning — no separate cooking required.
+Daycare lunches (margot_ fields): No eggs — classmate has a severe allergy. Safe unrefrigerated with ice pack for 4–5 hours. No reheating available. Finger food format preferred. No saucy dishes that fall apart in a container.
+Cooking philosophy: Think Dave Chang, not survival cooking. Meals should be genuinely good — lazy and efficient, but not depressing. Embrace the microwave, the rice cooker, the sheet pan. Minimal active cooking (~20 min max) but the result should taste intentional and satisfying. Not "weeknight American-Chinese takeout approximation" — actually Chinese, Korean, Japanese, or Southeast Asian in spirit. Use real techniques and real flavor combinations even if the execution is simple. Avoid Americanized or watered-down versions of Asian dishes.
+Cuisine style: Authentically Asian. Preferred formats: rice bowls, noodle soups, congee, steamed dishes, proper stir fries, miso-glazed proteins, banchan-style sides, simple braises. Lean into umami, fermented flavors, and aromatic bases. Not: "teriyaki chicken with steamed broccoli."
+Portions: Be specific enough to shop and cook without guessing. Say "3 salmon fillets" not "salmon." Say "½ head napa cabbage" not "cabbage." No need for precise measurements like teaspoons — just quantities of main ingredients.
+Pantry always stocked — never put on grocery list: soy sauce (light and dark), miso (white and red), fish sauce, oyster sauce, sesame oil, chili oil, doubanjiang, black vinegar, rice vinegar, mirin, Shaoxing wine, ginger, garlic, scallions, dried chilies, Sichuan peppercorns, standard spices, cornstarch, neutral oil.
+Preferred proteins: salmon, tofu, shrimp, rotisserie chicken, ground turkey, eggs (Jen only in cooked dishes), occasional red meat.
+Preferred veg: frozen broccoli, frozen stir fry veg, baby cucumbers, cherry tomatoes, bagged greens, shredded carrots, spinach, enoki mushrooms, napa cabbage, bok choy.
+Preferred carbs: jasmine rice, congee, rice noodles, wheat noodles, glass noodles.
+Frozen goods always on hand — do not add to grocery list: frozen peas, frozen green beans, frozen mango, frozen Chinese boiled dumplings, Argentinian shrimp, thin-sliced lamb, chicken tenders.
+Grocery stores: Whole Foods, PCC, H Mart, T&T. Asian grocery ingredients strongly encouraged.
+Rules:
+- Do not repeat any dinner from the last 4 weeks
+- Overlap ingredients across meals to reduce waste
+- Adult lunches should repurpose dinner leftovers where possible
+- Be specific about quantities in the grocery list and ingredient fields
+- Instructions must be an array of strings (one step per item), not a single paragraph`;
 
 document.getElementById("copy-prompt").addEventListener("click", async () => {
   const onHand = document.getElementById("on-hand").value.trim();
