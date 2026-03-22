@@ -350,6 +350,27 @@ document.getElementById("modal-save").addEventListener("click", () => {
   closeModal();
 });
 
+// ── Add grocery item ─────────────────────────────────────────────
+function addGroceryItem(name) {
+  const items = currentPlan.groceryList || [];
+  const newItem = { item: name, amount: "", category: "Other", checked: false };
+  const updates = {};
+  updates[`plan/groceryList/${items.length}`] = newItem;
+  update(ref(db), updates);
+}
+
+document.getElementById("add-item-btn").addEventListener("click", () => {
+  const input = document.getElementById("add-item-input");
+  const name = input.value.trim();
+  if (!name) return;
+  addGroceryItem(name);
+  input.value = "";
+});
+
+document.getElementById("add-item-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("add-item-btn").click();
+});
+
 // ── Uncheck all groceries ────────────────────────────────────────
 document.getElementById("uncheck-all").addEventListener("click", () => {
   const items = currentPlan.groceryList || [];
