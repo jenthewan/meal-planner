@@ -110,7 +110,7 @@ export default async function handler(req, res) {
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      return res.status(500).json({ error: "Claude returned invalid JSON. Try again.", raw: cleaned });
+      return res.status(500).json({ error: "Claude returned invalid JSON. Try again.", raw: cleaned.slice(0, 500) });
     }
 
     return res.status(200).json(parsed);

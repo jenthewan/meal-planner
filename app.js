@@ -414,7 +414,7 @@ async function generatePlan() {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Something went wrong.");
+      throw new Error((data.error || "Something went wrong.") + (data.raw ? " Raw: " + data.raw : ""));
     }
 
     if (!data.meals) {
