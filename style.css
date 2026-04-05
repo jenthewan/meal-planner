@@ -380,6 +380,12 @@ hr { border: none; border-top: 1px solid var(--gray-200); }
   font-weight: 500;
 }
 
+.generate-status {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  font-style: italic;
+}
+
 .error {
   font-size: 0.85rem;
   color: var(--red);

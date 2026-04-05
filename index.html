@@ -57,23 +57,20 @@
   <div id="generate" class="tab-panel">
     <div class="generate-card">
       <h2>Generate a New Week</h2>
-      <p>This copies your full household prompt to your clipboard. Paste it into <strong>Claude.ai</strong>, copy the JSON it returns, then paste it below.</p>
+      <p>Fill in any details below, then hit Generate. Claude will plan your week automatically.</p>
 
-      <label for="on-hand">Ingredients you have on hand this week <span class="optional">(optional)</span></label>
+      <label for="on-hand">Ingredients on hand this week <span class="optional">(optional)</span></label>
       <textarea id="on-hand" rows="3" placeholder="e.g. rotisserie chicken, spinach, cherry tomatoes..."></textarea>
 
-      <label for="recent-dinners">Recent dinners to avoid <span class="optional">(optional — app will fill this in automatically over time)</span></label>
+      <label for="recent-dinners">Recent dinners to avoid <span class="optional">(optional)</span></label>
       <textarea id="recent-dinners" rows="3" placeholder="e.g. miso salmon, shrimp stir fry..."></textarea>
 
-      <button class="btn-primary" id="copy-prompt">Copy Prompt to Clipboard</button>
-      <div id="copy-confirm" class="copy-confirm hidden">✓ Copied! Now paste it into Claude.ai.</div>
+      <label for="extra-notes">Anything else for this week <span class="optional">(optional)</span></label>
+      <textarea id="extra-notes" rows="3" placeholder="e.g. Li-Shuan has GERD this week, we want something light on Thursday..."></textarea>
 
-      <hr />
-
-      <label for="paste-json">Paste Claude's JSON response here</label>
-      <textarea id="paste-json" rows="8" placeholder='Paste the JSON from Claude.ai here...'></textarea>
-      <button class="btn-primary" id="load-plan">Load Plan into App</button>
-      <div id="load-error" class="error hidden"></div>
+      <button class="btn-primary" id="generate-btn">Generate This Week's Plan</button>
+      <div id="generate-status" class="generate-status hidden"></div>
+      <div id="generate-error" class="error hidden"></div>
     </div>
   </div>
 

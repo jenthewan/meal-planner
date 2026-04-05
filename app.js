@@ -389,107 +389,53 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-// ── Generate tab: copy prompt ────────────────────────────────────
-const HOUSEHOLD_PROMPT = `MEAL PLAN GENERATION PROMPT
-
-Generate a weekly meal plan for a family of three: Jen (Adult 1), Li-Shuan (Adult 2), and baby Margot (born March 2025, ~1 year old).
-
-OUTPUT FORMAT — return ONLY a valid JSON object with this exact structure, no other text before or after:
-{
-  "weekOf": "YYYY-MM-DD (Monday's date)",
-  "meals": {
-    "monday_dinner":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "tuesday_dinner":   { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "wednesday_dinner": { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "thursday_dinner":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "friday_dinner":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "monday_lunch":     { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "wednesday_lunch":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "friday_lunch":     { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "margot_monday":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "margot_tuesday":   { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "margot_wednesday": { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "margot_thursday":  { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] },
-    "margot_friday":    { "name": "", "instructions": [], "babyNotes": "", "ingredients": [] }
-  },
-  "groceryList": [
-    { "item": "", "amount": "", "category": "Produce|Protein|Dairy|Grains|Frozen|Other" }
-  ]
-}
-
-HOUSEHOLD RULES:
-Jen (Adult 1): Enjoys bold, authentic Asian food. Comfortable with sodium, spice, and fat. No restrictions.
-Li-Shuan (Adult 2): Health-conscious. Lower sodium, avoid excess carbs and red meat. Cannot eat walnuts, pecans, avocado, banana, or most mushrooms (enoki is fine). Allowed nuts: peanuts, almonds, pistachios. Where Jen and Li-Shuan differ on seasoning or heat, adjust at serving — do not cook two separate meals. Restricted ingredients may appear as optional garnish for Jen only.
-Margot (~1 year old): Soft solids and finger foods only. 8 teeth, no molars. Safe: soft-cooked veg, soft fish, ground or finely shredded meat, soft grains, soft fruit (squish blueberries before serving). Avoid: honey, high sodium, hard raw veg, large pieces, whole round slippery foods, hot dogs or processed cylinder-shaped foods. Pull Margot's portion before adding any sauces or seasoning — no separate cooking required.
-Daycare lunches (margot_ fields): No eggs — classmate has a severe allergy. Safe unrefrigerated with ice pack for 4–5 hours. No reheating available. Finger food format preferred. No saucy dishes that fall apart in a container.
-Cooking philosophy: Think Dave Chang, not survival cooking. Meals should be genuinely good — lazy and efficient, but not depressing. Embrace the microwave, the rice cooker, the sheet pan. Minimal active cooking (~20 min max) but the result should taste intentional and satisfying. Not "weeknight American-Chinese takeout approximation" — actually Chinese, Korean, Japanese, or Southeast Asian in spirit. Use real techniques and real flavor combinations even if the execution is simple. Avoid Americanized or watered-down versions of Asian dishes.
-Cuisine style: Authentically Asian. Preferred formats: rice bowls, noodle soups, congee, steamed dishes, proper stir fries, miso-glazed proteins, banchan-style sides, simple braises. Lean into umami, fermented flavors, and aromatic bases. Not: "teriyaki chicken with steamed broccoli."
-Portions: Be specific enough to shop and cook without guessing. Say "3 salmon fillets" not "salmon." Say "½ head napa cabbage" not "cabbage." No need for precise measurements like teaspoons — just quantities of main ingredients.
-Pantry always stocked — never put on grocery list: soy sauce (light and dark), miso (white and red), fish sauce, oyster sauce, sesame oil, chili oil, doubanjiang, black vinegar, rice vinegar, mirin, Shaoxing wine, ginger, garlic, scallions, dried chilies, Sichuan peppercorns, standard spices, cornstarch, neutral oil.
-Preferred proteins: salmon, tofu, shrimp, rotisserie chicken, ground turkey, eggs (Jen only in cooked dishes), occasional red meat.
-Preferred veg: frozen broccoli, frozen stir fry veg, baby cucumbers, cherry tomatoes, bagged greens, shredded carrots, spinach, enoki mushrooms, napa cabbage, bok choy.
-Preferred carbs: jasmine rice, congee, rice noodles, wheat noodles, glass noodles.
-Frozen goods always on hand — do not add to grocery list: frozen peas, frozen green beans, frozen mango, frozen Chinese boiled dumplings, Argentinian shrimp, thin-sliced lamb, chicken tenders.
-Grocery stores: Whole Foods, PCC, H Mart, T&T. Asian grocery ingredients strongly encouraged.
-Rules:
-- Do not repeat any dinner from the last 4 weeks
-- Overlap ingredients across meals to reduce waste
-- Adult lunches should repurpose dinner leftovers where possible
-- Be specific about quantities in the grocery list and ingredient fields
-- Instructions must be an array of strings (one step per item), not a single paragraph`;
-
-document.getElementById("copy-prompt").addEventListener("click", async () => {
+// ── Generate tab: call API ───────────────────────────────────────
+async function generatePlan() {
   const onHand = document.getElementById("on-hand").value.trim();
   const recentDinners = document.getElementById("recent-dinners").value.trim();
+  const extraNotes = document.getElementById("extra-notes").value.trim();
+  const errorEl = document.getElementById("generate-error");
+  const btn = document.getElementById("generate-btn");
+  const status = document.getElementById("generate-status");
 
-  let prompt = HOUSEHOLD_PROMPT;
-  prompt += `\n\nIngredients on hand this week: ${onHand || "none specified"}`;
-  prompt += `\nRecent dinners to avoid repeating: ${recentDinners || "none specified"}`;
-  prompt += `\n\nNow generate the full weekly meal plan as JSON only.`;
-
-  try {
-    await navigator.clipboard.writeText(prompt);
-    document.getElementById("copy-confirm").classList.remove("hidden");
-    setTimeout(() => document.getElementById("copy-confirm").classList.add("hidden"), 4000);
-  } catch {
-    alert("Clipboard copy failed — please copy the prompt manually.");
-  }
-});
-
-// ── Generate tab: load JSON ──────────────────────────────────────
-document.getElementById("load-plan").addEventListener("click", () => {
-  const raw = document.getElementById("paste-json").value.trim();
-  const errorEl = document.getElementById("load-error");
   errorEl.classList.add("hidden");
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+  status.textContent = "Asking Claude to plan your week — this takes about 15 seconds...";
+  status.classList.remove("hidden");
 
-  let parsed;
   try {
-    // Handle case where Claude wraps JSON in ```json ... ```
-    const cleaned = raw.replace(/^```json\s*/i, "").replace(/```\s*$/, "");
-    parsed = JSON.parse(cleaned);
-  } catch {
-    errorEl.textContent = "Couldn't read that JSON. Make sure you copied the full response from Claude and try again.";
-    errorEl.classList.remove("hidden");
-    return;
-  }
-
-  if (!parsed.meals) {
-    errorEl.textContent = "The JSON doesn't look right — it's missing a 'meals' section. Make sure Claude returned the full plan.";
-    errorEl.classList.remove("hidden");
-    return;
-  }
-
-  // Reset done states on new plan load
-  Object.keys(parsed.meals).forEach(k => { parsed.meals[k].done = false; });
-
-  set(planRef, parsed)
-    .then(() => {
-      document.getElementById("paste-json").value = "";
-      // Switch to This Week tab
-      document.querySelector('[data-tab="this-week"]').click();
-    })
-    .catch(err => {
-      errorEl.textContent = "Error saving to database: " + err.message;
-      errorEl.classList.remove("hidden");
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ onHand, recentDinners, extraNotes }),
     });
-});
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong.");
+    }
+
+    if (!data.meals) {
+      throw new Error("The response didn't include a meal plan. Try again.");
+    }
+
+    Object.keys(data.meals).forEach(k => { data.meals[k].done = false; });
+
+    await set(planRef, data);
+    document.getElementById("on-hand").value = "";
+    document.getElementById("extra-notes").value = "";
+    document.querySelector('[data-tab="this-week"]').click();
+
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Generate This Week's Plan";
+    status.classList.add("hidden");
+  }
+}
+
+document.getElementById("generate-btn").addEventListener("click", generatePlan);
